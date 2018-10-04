@@ -1,20 +1,34 @@
 import getSourceUrl from './getSourceUrl'
 import getVectorArtboardDisplay from '../../getVectorArtboardDisplay'
 
-export default function handlePRFilesPage() {
-  new MutationObserver(findPRIconFileElements)
+export default async function handlePRFilesPage() {
+  // get base ref so we can get original versions of files
+  let baseRef = 'master'
+  const pullRequestId = window.location.href.split('/')[6]
+  try {
+    const apiResponse = await fetch(`https://api.github.com/repos/brave/brave-core/pulls/${pullRequestId}`)
+    const apiResult = await apiResponse.json()
+    if (apiResult.base.sha) {
+      baseRef = apiResult.base.sha
+    }
+  }
+  catch (err) {
+    console.error('Error with Github API, continuing with "master" base ref', err)
+  }
+  // Github lazy-loads file details, so re-parse when the list changes
+  new MutationObserver(() => findPRIconFileElements(baseRef))
     .observe(document.querySelector('#files'), {childList: true, subtree: true})
-  findPRIconFileElements()
+  findPRIconFileElements(baseRef)
 }
 
-function findPRIconFileElements() {
+function findPRIconFileElements(baseRef) {
   const fileHeaderElements = document.querySelectorAll('.file-header[data-path$=".icon"]')
   for (const fileHeaderElement of fileHeaderElements) {
-    handlePRIconFileElement(fileHeaderElement.getAttribute('data-path'), fileHeaderElement.parentNode)
+    handlePRIconFileElement(fileHeaderElement.getAttribute('data-path'), fileHeaderElement.parentNode, baseRef)
   }
 }
 
-function handlePRIconFileElement(filePath, fileElement) {
+function handlePRIconFileElement(filePath, fileElement, baseRef) {
   if (fileElement.getAttribute('data-skia-ext-active')) {
     return
   }
@@ -28,41 +42,10 @@ function handlePRIconFileElement(filePath, fileElement) {
   // main content area to toggle
   const fileContentElement = fileElement.querySelector('.js-file-content')
   const graphicContentElement = document.createElement('div')
-  fileElement.appendChild(graphicContentElement)
-  // add a button to toggle contents
-  const toggleButton = document.createElement('button')
-  toggleButton.classList = viewButton.classList
-  setToggleButtonMode(toggleButton, 'code')
-  toggleButton.addEventListener('click', handlePRIconFileToggle.bind(null, fileContentElement, graphicContentElement, toggleButton, relativeChangeFilePath))
-  viewButton.parentNode.appendChild(toggleButton)
+  fileContentElement.parentNode.insertBefore(graphicContentElement, fileContentElement)
+  showComparisonGraphics(graphicContentElement, relativeChangeFilePath, baseRef)
 }
 
-function setToggleButtonMode(toggleButton, mode) {
-  toggleButton.setAttribute('data-mode', mode)
-  toggleButton.textContent = mode === 'code' ? 'Show Graphics' : 'Show Code'
-  toggleButton.setAttribute('aria-label', mode === 'code' ? 'Converted SVG Graphics' : 'Source Code')
-}
-
-function handlePRIconFileToggle(fileContentElement, graphicContentElement, toggleButton, relativeChangeFilePath)  {
-  let newMode = null
-  if (toggleButton.getAttribute('data-mode') === 'code') {
-    fileContentElement.style.display = 'none'
-    graphicContentElement.style.display = 'block'
-    // switch to graphic
-    newMode = 'graphic'
-    graphicContentElement.innerHTML = ''
-    showComparisonGraphics(graphicContentElement, relativeChangeFilePath)
-  }
-  else {
-    fileContentElement.style.display = 'block'
-    graphicContentElement.style.display = 'none'
-    // switch to code
-    newMode = 'code'
-  }
-  if (newMode) {
-    setToggleButtonMode(toggleButton, newMode)
-  }
-}
 
 const styles = {
   comparison: `
@@ -70,6 +53,7 @@ const styles = {
     padding: 10px;
     display: flex;
     flex-direction: column;
+    border-bottom: 1px solid #e1e4e8;
   `,
   
 }
@@ -78,11 +62,11 @@ styles.comparisonLeft = styles.comparison + `
   border-right: solid 8px #bbb;
 `
 
-async function showComparisonGraphics(graphicContentElement, relativeChangeFilePath) {
+async function showComparisonGraphics(graphicContentElement, relativeChangeFilePath, baseRef) {
   const comparisonElement = document.createElement('div')
 
   comparisonElement.innerHTML = `<p>Loading...</p>`
-  const fileContents = await getPRFileContents(relativeChangeFilePath)
+  const fileContents = await getPRFileContents(relativeChangeFilePath, baseRef)
   comparisonElement.innerHTML = ''
 
   comparisonElement.style.display = 'flex'
@@ -111,11 +95,9 @@ async function showComparisonGraphics(graphicContentElement, relativeChangeFileP
   graphicContentElement.appendChild(comparisonElement)
 }
 
-async function getPRFileContents(relativeChangeFilePath) {
+async function getPRFileContents(relativeChangeFilePath, baseRef) {
   const changeFileSourceUrl = getSourceUrl(relativeChangeFilePath)
-  const originalFileSourceUrl = getSourceUrl(relativeChangeFilePath, true)
-  console.log('changed:', changeFileSourceUrl)
-  console.log('original:', originalFileSourceUrl)
+  const originalFileSourceUrl = getSourceUrl(relativeChangeFilePath, baseRef)
   let changedFileContents = undefined
   try {
     const changedFileResponse = await fetch(changeFileSourceUrl)

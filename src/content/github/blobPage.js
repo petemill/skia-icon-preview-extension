@@ -21,57 +21,31 @@ export default function handleBlobPage() {
 
 function handleSkiaIconFile(fileElement) {
   fileElement.setAttribute('data-skia-ext-active', true)
-  const canvasElement = document.createElement('div')
-  canvasElement.style.display = 'none'
-  canvasElement.style.padding = '10px'
-  fileElement.appendChild(canvasElement)
   let codeElement = fileElement.querySelector(".blob-wrapper");
+  const graphicContentElement = document.createElement('div')
+  graphicContentElement.style.padding = '10px'
+  graphicContentElement.style.borderBottom = '1px solid #e1e4e8'
+  codeElement.parentNode.insertBefore(graphicContentElement, codeElement)
   let rawButton = fileElement.querySelector("#raw-url");
-  let toggleButton = document.createElement('button')
-  toggleButton.classList = rawButton.classList
-  setToggleButtonMode(toggleButton, 'code')
-  rawButton.parentNode.insertBefore(toggleButton, rawButton)
-  
-  toggleButton.addEventListener('click', async () => {
-    let newMode = null
-    if (toggleButton.getAttribute('data-mode') === 'code') {
-      codeElement.style.display = 'none'
-      canvasElement.style.display = 'block'
-      newMode = 'graphic'
-
-      if (canvasElement.children.length <= 0) {
-        const loadMessage = document.createElement('div')
-        loadMessage.classList.add('load-in-progress')
-        loadMessage.textContent = 'Loading SVG...'
-        canvasElement.appendChild(loadMessage)
-        
-        try {
-          const res = await fetch(getSourceUrl(rawButton.getAttribute('href')))
-          const text = await res.text()
-          canvasElement.appendChild(getVectorArtboardDisplay(text))
-        }
-        catch(err) {
-          const errorMessage = document.createElement('div')
-          errorMessage.classList.add('load-failed')
-          errorMessage.textContent = `Failed to load SVG. ${err.message}`
-          canvasElement.appendChild(errorMessage)
-        }
-        loadMessage.remove()
-      }
-    }
-    else {
-      canvasElement.style.display = 'none'
-      codeElement.style.display = 'block'
-      newMode = 'code'
-    }
-    if (newMode) {
-      setToggleButtonMode(toggleButton, newMode)
-    }
-  });
+  showGraphics(graphicContentElement, rawButton.getAttribute('href'))
 }
 
-function setToggleButtonMode(toggleButton, mode) {
-  toggleButton.setAttribute('data-mode', mode)
-  toggleButton.textContent = mode === 'code' ? 'Show Graphics' : 'Show Code'
-  toggleButton.setAttribute('aria-label', mode === 'code' ? 'Converted SVG Graphics' : 'Source Code')
+async function showGraphics(graphicContentElement, filePath) {
+  const loadMessage = document.createElement('div')
+  loadMessage.classList.add('load-in-progress')
+  loadMessage.textContent = 'Loading SVG...'
+  graphicContentElement.appendChild(loadMessage)
+  
+  try {
+    const res = await fetch(getSourceUrl(filePath))
+    const text = await res.text()
+    graphicContentElement.appendChild(getVectorArtboardDisplay(text))
+  }
+  catch(err) {
+    const errorMessage = document.createElement('div')
+    errorMessage.classList.add('load-failed')
+    errorMessage.textContent = `Failed to load SVG. ${err.message}`
+    graphicContentElement.appendChild(errorMessage)
+  }
+  loadMessage.remove()
 }
