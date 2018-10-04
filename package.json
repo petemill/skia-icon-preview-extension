@@ -1,5 +1,5 @@
 {
-  "name": "skia-icon-preview",
+  "name": "skia-icon-preview-extension",
   "version": "1.0.0",
   "description": "Display Skia icons as SVG in the github.com UI",
   "scripts": {
