@@ -1,4 +1,4 @@
-// See LICENSE
+// Licensed under the Apache license described at https://github.com/sadrulhc/vector-icons/blob/master/LICENSE
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const SCALE = 4;

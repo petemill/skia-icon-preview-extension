@@ -6,7 +6,7 @@ export default function handleBlobPage() {
   const pathElement = document.querySelector('.final-path')
   if (pathElement) {
     const fileName = pathElement.textContent
-    isSkiaFile = true
+    isSkiaFile = fileName.endsWith('.icon')
   }
   if (!isSkiaFile) {
     return
