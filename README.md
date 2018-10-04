@@ -19,8 +19,8 @@ Supports multiple canvas sizes in the same .icon file
     4. Select the `build` folder.
 
 ## Preview any .icon file
-![image](https://user-images.githubusercontent.com/741836/46456255-11da2980-c763-11e8-8bb4-27cde6ef1c03.png)
+![image](https://user-images.githubusercontent.com/741836/46456251-0c7cdf00-c763-11e8-8590-eeb25b2128a1.png)
 
 ## Show original and mofieid on any PR
-![image](https://user-images.githubusercontent.com/741836/46456251-0c7cdf00-c763-11e8-8590-eeb25b2128a1.png)
+![image](https://user-images.githubusercontent.com/741836/46456255-11da2980-c763-11e8-8bb4-27cde6ef1c03.png)
 
